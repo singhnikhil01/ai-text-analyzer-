@@ -1,0 +1,6 @@
+{
+  "name": "AI-Text-Analyzer",
+  "description": "An application that paraphrases input text, detects AI generation, and checks for plagiarism using Gemini AI.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
