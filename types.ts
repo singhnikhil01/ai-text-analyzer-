@@ -11,6 +11,8 @@ export interface PlagiarismMatch {
   sourceUrl: string;
   sourceTitle: string | null;
   similarity: number; // 0-1
+  justification: string; // Explanation for the match
+  authors?: string | null; // Authors, if applicable (e.g., for academic papers)
 }
 
 export interface PlagiarismDetectionResult {
@@ -69,3 +71,6 @@ export interface FindPlagiarismServiceResult {
   analysis: PlagiarismDetectionResult | null;
   groundingSources?: WebSource[];
 }
+
+// Ensures the module is valid even if all type declarations are stripped.
+export {};

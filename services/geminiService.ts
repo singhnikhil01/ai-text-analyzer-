@@ -139,27 +139,31 @@ Analyze the provided text snippet and compare it against web sources using Googl
 
 Text Snippet: "${textSnippet}"
 
-Respond with ONLY a single, valid JSON object with the following structure:
+Respond with ONLY a single, valid JSON object with the following structure. Do NOT include any explanatory text or markdown formatting outside the JSON object.
 {
-  "overallPlagiarismScore": number, // A score from 0.0 (no plagiarism) to 1.0 (highly plagiarized)
+  "overallPlagiarismScore": number, // A score from 0.0 (no plagiarism) to 1.0 (highly plagiarized). This score MUST be a holistic assessment, critically evaluating the number of matches, their similarity scores, and the length of matched segments relative to the input text. A few minor, short, or coincidental matches should result in a low score. Extensive, direct copying should result in a high score.
   "matches": [
     {
       "textSegment": "string", // The specific part of the input text that matches a source
-      "sourceUrl": "string", // The URL of the matched source
-      "sourceTitle": "string or null", // The title of the matched source page, if available
-      "similarity": number // A score from 0.0 to 1.0 indicating the similarity of this segment to the source
+      "sourceUrl": "string", // The VALID and ACCESSIBLE URL of the matched source
+      "sourceTitle": "string or null", // The title of the matched source page
+      "similarity": number, // A score from 0.0 to 1.0 indicating the similarity
+      "justification": "string", // DETAILED explanation why this segment is a match. For example: "Direct copy of 2 sentences from source.", "Paraphrased content with significant overlap in structure and keywords.", "Commonly used phrase, low plagiarism concern despite match.", "Conceptual similarity but different wording."
+      "authors": "string or null" // Comma-separated author names, if an academic paper and available on the source page
     }
   ]
 }
-If no plagiarism is detected, overallPlagiarismScore should be 0 and matches should be an empty array.
-Do NOT include any explanatory text or markdown formatting outside the JSON object.`;
+If no plagiarism is detected, overallPlagiarismScore MUST be 0 and matches MUST be an empty array.
+Ensure sourceUrl is a direct link to the content, not a search result page or a broken link.
+Provide a DETAILED justification for each match, clearly explaining why it's flagged (e.g., direct quote, structural similarity, specific key phrases matched).
+`;
 
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
-        temperature: 0.2, // Lower temperature for more focused plagiarism checking
+        temperature: 0.1, // Lower temperature for more factual and precise plagiarism analysis
       }
     });
 
@@ -167,17 +171,18 @@ Do NOT include any explanatory text or markdown formatting outside the JSON obje
     
     let groundingSources: WebSource[] = [];
      if (response.candidates && response.candidates.length > 0) {
-        const candidate = response.candidates[0] as Candidate; // Candidate type is still needed for groundingSources extraction
+        const candidate = response.candidates[0] as Candidate; 
         if (candidate.groundingMetadata && candidate.groundingMetadata.groundingChunks) {
             groundingSources = candidate.groundingMetadata.groundingChunks
-                .map((chunk: GroundingChunk) => chunk.web) // GroundingChunk and WebSource still needed
+                .map((chunk: GroundingChunk) => chunk.web) 
                 .filter((webSource): webSource is WebSource => webSource !== undefined && webSource.uri !== '');
         }
     }
 
     return { analysis: plagiarismResult, groundingSources };
 
-  } catch (error) {
+  } catch (error)
+{
     console.error(`Error finding plagiarism for "${textSnippet.substring(0, 50)}...":`, error);
     return { analysis: null, groundingSources: [] };
   }

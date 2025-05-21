@@ -1,6 +1,7 @@
+
 import React from 'react';
 // Using a more generic "magic" or "sparkle" icon might fit the AI theme
-import { SparklesIcon } from '@heroicons/react/24/outline'; // Placeholder, would need to add heroicons or use an SVG
+// import { SparklesIcon } from '@heroicons/react/24/outline'; // Removed: This icon was imported but not used. DefaultSparklesIcon is used instead.
 
 // A simple SVG SparklesIcon if heroicons are not available:
 const DefaultSparklesIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (

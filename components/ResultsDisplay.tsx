@@ -1,11 +1,12 @@
 
+
 import React from 'react';
 import type { ParaphraseResultItem, WebSource, AIContentDetectionResult, PlagiarismDetectionResult, PlagiarismMatch } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 import LinkIcon from './icons/LinkIcon';
 import AIIcon from './icons/AIIcon'; 
 import ShieldCheckIcon from './icons/ShieldCheckIcon'; 
-import { ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, ArrowPathIcon, UserGroupIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
 
 interface ParaphraseResultsDisplayProps {
@@ -14,6 +15,19 @@ interface ParaphraseResultsDisplayProps {
   onCheckPlagiarism: (itemId: string, text: string) => void;
   overallStatusMessage?: string;
 }
+
+// Moved ActionButton outside of ResultsDisplay component
+const ActionButton: React.FC<{onClick: () => void, isLoading: boolean, children: React.ReactNode, title: string}> = ({ onClick, isLoading, children, title }) => (
+    <button
+        onClick={onClick}
+        disabled={isLoading}
+        title={title}
+        className="text-xs text-sky-400 hover:text-sky-300 hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+    >
+        {isLoading ? <LoadingSpinner size="sm" color="text-sky-400"/> : <ArrowPathIcon className="w-3.5 h-3.5 mr-1"/>}
+        {children}
+    </button>
+  );
 
 const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({ 
     resultItems, 
@@ -98,17 +112,35 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
         {matches && matches.length > 0 ? (
           <div>
             <h6 className="text-xs text-slate-400 font-medium mb-1">Potential Matches:</h6>
-            <ul className="space-y-2.5">
+            <ul className="space-y-3">
               {matches.map((match: PlagiarismMatch, index: number) => (
-                <li key={index} className="bg-slate-700/50 p-2.5 rounded-md text-xs">
-                  <p className="text-slate-300 italic mb-1">"{match.textSegment}"</p>
-                  <div className="flex items-center justify-between">
-                    <a href={match.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline truncate flex items-center">
-                      <LinkIcon className="w-3 h-3 mr-1 flex-shrink-0"/> 
-                      <span className="truncate">{match.sourceTitle || match.sourceUrl}</span>
+                <li key={index} className="bg-slate-700/50 p-3 rounded-md text-xs">
+                  <p className="text-slate-300 italic mb-1.5">"{match.textSegment}"</p>
+                  
+                  <div className="flex items-center justify-between mb-1">
+                    <a href={match.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline truncate flex items-center group" title={match.sourceTitle || match.sourceUrl}>
+                      <LinkIcon className="w-3 h-3 mr-1.5 flex-shrink-0"/> 
+                      <span className="truncate group-hover:whitespace-normal group-hover:overflow-visible">{match.sourceTitle || 'Untitled Source'}</span>
                     </a>
-                    <span className="text-rose-400 ml-2 flex-shrink-0">{(match.similarity * 100).toFixed(0)}% similar</span>
+                    <span className="text-rose-400 ml-2 flex-shrink-0 whitespace-nowrap">{(match.similarity * 100).toFixed(0)}% similar</span>
                   </div>
+
+                  {match.authors && (
+                    <div className="flex items-center text-slate-400 text-xxs mb-1">
+                      <UserGroupIcon className="w-3 h-3 mr-1 flex-shrink-0" />
+                      <span>Authors: {match.authors}</span>
+                    </div>
+                  )}
+
+                  {match.justification && (
+                    <div className="mt-2 p-2 bg-slate-600/60 rounded">
+                        <h6 className="text-xs font-semibold text-sky-300 mb-0.5 flex items-center">
+                            <ChatBubbleLeftRightIcon className="w-3.5 h-3.5 mr-1.5"/>
+                            Explanation for Match:
+                        </h6>
+                        <p className="text-slate-300 text-xs italic">"{match.justification}"</p>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -117,14 +149,14 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
           <p className="text-slate-400 italic text-xs">No significant direct matches found.</p>
         )}
         {item.plagiarismGroundingSources && item.plagiarismGroundingSources.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-slate-700/50">
-                <h6 className="text-xxs font-semibold text-slate-500 mb-0.5">Grounding URLs (used for this plagiarism check):</h6>
+            <div className="mt-3 pt-3 border-t border-slate-700/50">
+                <h6 className="text-xxs font-semibold text-slate-500 mb-1">Grounding URLs (used for this plagiarism check):</h6>
                 <ul className="list-none space-y-0.5">
                 {item.plagiarismGroundingSources.map((source: WebSource, srcIdx: number) => (
                     <li key={`${item.id}-plag-grounding-${srcIdx}`} className="text-xxs">
-                    <a href={source.uri} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:text-sky-400 hover:underline flex items-center group">
-                        <LinkIcon className="w-2 h-2 mr-1 flex-shrink-0" />
-                        <span className="truncate group-hover:whitespace-normal">{source.title || source.uri}</span>
+                    <a href={source.uri} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:text-sky-400 hover:underline flex items-center group" title={source.title || source.uri}>
+                        <LinkIcon className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
+                        <span className="truncate group-hover:whitespace-normal group-hover:overflow-visible">{source.title || source.uri}</span>
                     </a>
                     </li>
                 ))}
@@ -134,19 +166,6 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
       </div>
     );
   };
-
-  const ActionButton: React.FC<{onClick: () => void, isLoading: boolean, children: React.ReactNode, title: string}> = ({ onClick, isLoading, children, title }) => (
-    <button
-        onClick={onClick}
-        disabled={isLoading}
-        title={title}
-        className="text-xs text-sky-400 hover:text-sky-300 hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-    >
-        {isLoading ? <LoadingSpinner size="sm" color="text-sky-400"/> : <ArrowPathIcon className="w-3.5 h-3.5 mr-1"/>}
-        {children}
-    </button>
-  );
-
 
   return (
     <div className="mt-8">
@@ -159,7 +178,7 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
             {/* Text Content Header */}
             <div className="mb-4 pb-4 border-b border-slate-700">
               <h3 className={`text-xl font-semibold ${item.isOriginal ? 'text-sky-300' : 'text-emerald-300'}`}>
-                {item.isOriginal ? 'Original Text' : `Paraphrase Suggestion ${index + 1}`} 
+                {item.isOriginal ? 'Original Text' : `Paraphrase Suggestion ${item.isOriginal ? '' : index }`} 
               </h3>
               <p className="text-slate-200 mt-1.5 leading-relaxed" aria-label={`Text content: ${item.text}`}>
                 {item.text}
@@ -176,8 +195,10 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
                         <AIIcon className="w-4.5 h-4.5 mr-2"/>
                         AI Content Analysis
                     </h4>
+                    {/* prettier-ignore */}
+                    {/* FIX: Corrected condition for showing Re-analyze button. Button should show if status is idle or error. */}
                     {(item.aiDetectionStatus === 'idle' || item.aiDetectionStatus === 'error') && (
-                         <ActionButton onClick={() => onDetectAIContent(item.id, item.text)} isLoading={false} title="Re-analyze AI content">
+                         <ActionButton onClick={() => onDetectAIContent(item.id, item.text)} isLoading={item.aiDetectionStatus === 'loading'} title="Re-analyze AI content">
                             Re-analyze
                          </ActionButton>
                     )}
@@ -203,8 +224,10 @@ const ResultsDisplay: React.FC<ParaphraseResultsDisplayProps> = ({
                         <ShieldCheckIcon className="w-4.5 h-4.5 mr-2"/>
                         Plagiarism Check
                     </h4>
+                    {/* prettier-ignore */}
+                    {/* FIX: Corrected condition for showing Re-check button. Button should show if status is idle or error. */}
                     {(item.plagiarismDetectionStatus === 'idle' || item.plagiarismDetectionStatus === 'error') && (
-                         <ActionButton onClick={() => onCheckPlagiarism(item.id, item.text)} isLoading={false} title="Re-check for plagiarism">
+                         <ActionButton onClick={() => onCheckPlagiarism(item.id, item.text)} isLoading={item.plagiarismDetectionStatus === 'loading'} title="Re-check for plagiarism">
                             Re-check
                          </ActionButton>
                     )}
